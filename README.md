@@ -1,44 +1,115 @@
-# Air Juggler (React + TensorFlow.js)
+# Air Juggler Student Guide (React + TensorFlow.js)
 
-This project is a React implementation of the Codédex webcam game guide.
-You control the game with your hands in front of your webcam.
+This project teaches you how to build a webcam-controlled game in React using
+TensorFlow.js hand tracking.
 
-The app uses:
+Template repository:
+https://github.com/cederdorff/webcam-controlled-game
 
-- TensorFlow.js in the browser
-- MediaPipe Hands via TensorFlow hand-pose detection
-- React hooks and components for UI + game state
+Learning inspiration and theory:
+https://www.codedex.io/projects/make-a-webcam-controlled-game-with-tensorflowjs
 
-If you want the short version: start the game, hold one or two hands in frame,
-and juggle the falling orbs so they do not hit the floor.
+The goal is both:
 
-## What This React Version Includes
+- set up the project locally
+- understand how webcam + machine learning + game logic work together
 
-- A React game loop rendered on canvas
-- Webcam access via getUserMedia
-- Hand landmark detection with TensorFlow.js + MediaPipe runtime
-- Palm-center conversion to simple x/y positions
-- Collision-based gameplay, score, lives, and best score
+## What You Will Build
 
-## Quick Start
+You will run a game called Air Juggler.
 
-1. Install dependencies.
+- Your webcam detects your hand positions.
+- Falling balls bounce when your hand "paddles" hit them.
+- You score points by keeping balls in the air.
+- The game ends when lives reach zero.
+
+## 1) Local Setup from the Template Repo
+
+### Create Your Own Copy
+
+1. Open the template:
+   https://github.com/cederdorff/webcam-controlled-game
+2. Click Use this template.
+3. Create a new repository in your own GitHub account.
+
+### Clone and Run
+
+1. Open your new repository on GitHub.
+2. Click the green Code button.
+3. Choose Open with GitHub Desktop.
+4. In GitHub Desktop, choose a local folder and click Clone.
+5. In GitHub Desktop, click Open in Visual Studio Code.
+6. In VS Code, open a terminal and run:
 
 ```bash
 npm install
-```
-
-2. Start dev server.
-
-```bash
 npm run dev
 ```
 
-3. Open the local URL printed in terminal (usually http://localhost:5173).
+Open the local URL shown in terminal (usually http://localhost:5173), then:
 
-4. Click Start game and allow webcam access.
+1. Click Start game
+2. Allow webcam permission
+3. Put one or two hands in frame
 
-## React Project Structure
+Important: run on localhost through Vite. Do not open files directly from disk.
+
+## 2) How It Works and What It Uses
+
+This project uses:
+
+- React for UI components and app state
+- Vite for local development and build tooling
+- TensorFlow.js (loaded from CDN) to run ML in the browser
+- MediaPipe Hands model through `@tensorflow-models/hand-pose-detection`
+- Browser webcam APIs (`getUserMedia`) for live video
+- HTML Canvas for real-time game rendering
+
+How the full app works:
+
+1. The app asks for webcam permission.
+2. A detector is initialized in the browser.
+3. Each video frame is analyzed to detect hand landmarks.
+4. Landmark points are converted to palm center positions.
+5. Palm positions are used as game paddles.
+6. The game loop updates physics, score, and lives.
+7. Canvas is re-rendered with the latest game state.
+
+### Traditional Rules vs Machine Learning
+
+In traditional computer vision, you would hand-code rules like colors, shapes,
+and edge logic. That quickly breaks with lighting changes, skin tone variation,
+or different camera angles.
+
+In machine learning, a model learns patterns from many examples and predicts
+results for new input. Here, the model predicts hand landmarks from webcam
+frames.
+
+### Why TensorFlow.js
+
+TensorFlow.js runs ML in the browser:
+
+- no backend required
+- webcam data can stay on-device
+- easy to combine with React apps
+
+### What MediaPipe Hands Provides
+
+The detector predicts 21 hand landmarks per hand.
+This app uses those points to estimate a stable palm center and control game
+interactions.
+
+### Frame-by-Frame Pipeline
+
+Every frame does this:
+
+1. Read webcam frame
+2. Run hand detection
+3. Convert landmarks to palm positions
+4. Update game physics and score
+5. Draw game state on canvas
+
+## 3) Project Structure and Responsibilities
 
 ```text
 src/
@@ -56,153 +127,79 @@ src/
     StatusPill.jsx
 ```
 
-## How It Maps to the Original Guide (React Edition)
+- `handTracking.js`: model setup + hand position utilities
+- `game.js`: gameplay state, collisions, rendering
+- `useHandTracking.js`: orchestrates camera, detection loop, and game updates
+- `TrackingStage.jsx`: video + canvas + game-over HTML overlay
+- `ControlPanel.jsx`: score/lives/hands + start/stop/restart controls
 
-### Step 1: TensorFlow.js Libraries
-
-In the non-React guide, scripts are added to index.html.
-In this React version, the same scripts are added to index.html and React handles
-the app structure around them.
-
-Main imports live in src/handTracking.js:
-
-- window.tf
-- window.handPoseDetection
-
-### Step 2: Loading State
-
-The hook src/hooks/useHandTracking.js manages a loading mode.
-
-The status pill shows states like:
-
-- Loading TensorFlow.js
-- Show your hands
-- Hands detected
-- Game over
-
-### Step 3: Webcam Access
-
-The hook requests webcam stream with:
-
-```js
-navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
-```
-
-It assigns stream to the video element and starts playback.
-
-### Step 4: Load MediaPipe Hands Model
-
-Detector setup is in src/handTracking.js using:
-
-- Supported model: MediaPipeHands
-- runtime: mediapipe
-- solutionPath: jsDelivr MediaPipe Hands CDN
-- maxHands: 2
-- modelType: full
-
-### Step 5: Real-Time Detection
-
-Each frame in the hook:
-
-1. Reads current video frame
-2. Runs detector.estimateHands(video)
-3. Converts landmarks to palm centers
-4. Updates game physics
-5. Draws to canvas
-
-### Step 6: Landmark to Coordinates
-
-The guide uses wrist + MCP bases to approximate palm center.
-This project does the same with indices 0, 5, 9, 13, 17 and mirrors x so controls
-feel natural in selfie mode.
-
-### Step 7: Integrate with Game Loop
-
-React integration split is:
-
-- src/handTracking.js for ML and coordinate utilities
-- src/game.js for gameplay update and rendering
-- src/hooks/useHandTracking.js for orchestration
-- src/components/\* for UI
-
-## Gameplay Rules (This Version)
+## 4) How the Game Logic Works
 
 - You start with 3 lives.
-- Balls fall with gravity.
-- Touch balls with hand paddles to bounce them upward.
-- Each successful bounce gives 1 point.
-- If a ball hits the floor, you lose 1 life and that ball respawns.
-- More balls spawn as score increases.
-- Game ends at 0 lives.
+- Balls fall due to gravity.
+- Hand positions are treated like circular paddles.
+- Ball-hand collisions bounce balls and increase score.
+- Ball hits floor => lose 1 life, ball respawns.
+- At higher score, more balls spawn.
+- When lives are 0, game over.
 
-## Core Files Explained
+## 5) Learning Path for Students
 
-### src/handTracking.js
+Follow this order to understand the project quickly:
 
-- Initializes TensorFlow backend
-- Creates MediaPipe detector
-- Estimates hands per frame
-- Converts landmarks into palm-center positions
+1. `App.jsx` to see top-level composition
+2. `TrackingStage.jsx` to understand visual layers
+3. `useHandTracking.js` to follow runtime flow
+4. `handTracking.js` to inspect ML setup
+5. `game.js` to inspect game rules and rendering
+6. `ControlPanel.jsx` for UI state display
 
-### src/game.js
+## 6) Small Practice Tasks
 
-- Creates game state
-- Updates ball physics and collisions
-- Draws hands and balls on canvas
+Try these one at a time:
 
-### src/hooks/useHandTracking.js
+1. Change gravity to make the game easier/harder.
+2. Increase or reduce hand paddle radius.
+3. Add a combo multiplier for consecutive hits.
+4. Add a pause button in the control panel.
+5. Show an in-game countdown before start.
 
-- Requests camera access
-- Controls start/stop/restart flow
-- Runs the per-frame detection + game update loop
-- Stores best score in localStorage
-
-### src/components/TrackingStage.jsx
-
-- Renders video and canvas layers
-- Renders the HTML game-over overlay
-- Shows start overlay button when game is not running
-
-### src/components/ControlPanel.jsx
-
-- Displays Score, Best, Lives, Hands
-- Provides Start/Stop/Restart action button
-
-## Troubleshooting
+## 7) Troubleshooting
 
 ### Camera blocked
 
-If you see Camera blocked:
+- Allow camera permissions in browser settings
+- Ensure no other app is locking the webcam
+- Use localhost, not file-opened HTML
 
-- Allow camera permissions in your browser
-- Make sure you are on localhost (not opening files directly)
-- Close apps that lock the webcam
+### Slow or unstable tracking
 
-### Slow detection
-
-- Close heavy browser tabs
 - Use better lighting
-- Keep hands centered and fully visible
-
-### No hands detected
-
+- Keep hands fully visible
 - Move closer to camera
-- Keep your palm open for initial detection
-- Reduce strong backlight from windows
+- Close heavy tabs/apps
 
-## Scripts
+### Model not loading
+
+- Check internet access (CDN scripts are used)
+- Hard refresh browser
+- Restart `npm run dev`
+
+## 8) Useful Commands
 
 ```bash
 npm run dev
+npm run lint
 npm run build
 npm run preview
-npm run lint
 ```
 
-## Credits
+## 9) References
 
-This project is inspired by the Codédex tutorial:
-Make a Webcam Controlled Game with TensorFlow.js.
+- Template repo:
+  https://github.com/cederdorff/webcam-controlled-game
+- Original explanation guide:
+  https://www.codedex.io/projects/make-a-webcam-controlled-game-with-tensorflowjs
 
-This repository version translates that guide into a React component + hook
-architecture, så du kan bygge videre med et moderne React setup.
+Denne guide er skrevet til elever, så den er nem at følge, men stadig grundig
+nok til at du forstår hvordan delene hænger sammen.
