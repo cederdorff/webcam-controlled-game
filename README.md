@@ -65,6 +65,31 @@ This project uses:
 - Browser webcam APIs (`getUserMedia`) for live video
 - HTML Canvas for real-time game rendering
 
+### What is TensorFlow.js?
+
+TensorFlow.js is a JavaScript machine learning library that runs directly in the
+browser.
+
+In this project, TensorFlow.js is the engine that executes a pre-trained hand
+tracking model on each webcam frame.
+
+Why this is useful for students:
+
+- You do not need a backend server for inference.
+- You can experiment quickly in frontend code.
+- You can build interactive AI features with normal web tools.
+
+Important note: this project does not train a model. It uses a model that is
+already trained and focuses on using model output in a real app.
+
+### What is MediaPipe Hands here?
+
+MediaPipe Hands is the hand landmark model used by the project. For each
+detected hand, it returns 21 landmark points (x/y positions).
+
+The app does not use all points equally. It computes a stable palm center from a
+small landmark subset and uses that center as the paddle position in the game.
+
 How the full app works:
 
 1. The app asks for webcam permission.
@@ -74,6 +99,19 @@ How the full app works:
 5. Palm positions are used as game paddles.
 6. The game loop updates physics, score, and lives.
 7. Canvas is re-rendered with the latest game state.
+
+### Data Flow (End to End)
+
+Think of the app as a pipeline:
+
+1. Input layer: webcam video frames
+2. ML layer: detector estimates hand landmarks
+3. Transform layer: landmarks are converted to palm coordinates
+4. Game layer: coordinates affect collision and score
+5. UI layer: status, score, and overlays update in React
+
+This separation is important because it makes the code easier to debug and
+extend.
 
 ### Traditional Rules vs Machine Learning
 
@@ -133,6 +171,22 @@ src/
 - `TrackingStage.jsx`: video + canvas + game-over HTML overlay
 - `ControlPanel.jsx`: score/lives/hands + start/stop/restart controls
 
+### Architecture in Plain Language
+
+- `App.jsx` is the page shell that wires components together.
+- `useHandTracking.js` is the runtime brain. It controls start/stop/restart,
+  talks to the detector, and triggers game updates each frame.
+- `handTracking.js` is ML utility code. It initializes the detector and handles
+  landmark-to-position conversion.
+- `game.js` is pure game logic. It does not care about React. It only needs
+  hand positions and time delta.
+- `TrackingStage.jsx` is the visual stage (video + canvas + overlays).
+- `ControlPanel.jsx` is the control/readout surface for the player.
+
+This architecture helps students learn a key engineering idea:
+
+- keep ML code, game logic, and UI rendering in separate modules.
+
 ## 4) How the Game Logic Works
 
 - You start with 3 lives.
@@ -154,7 +208,34 @@ Follow this order to understand the project quickly:
 5. `game.js` to inspect game rules and rendering
 6. `ControlPanel.jsx` for UI state display
 
-## 6) Small Practice Tasks
+## 6) How Students Should Use This Project
+
+Use this project as a lab, not just a finished demo.
+
+Recommended workflow:
+
+1. Run the game and confirm baseline behavior.
+2. Change one variable only (for example gravity).
+3. Test in browser and observe result.
+4. Commit that change with a clear message.
+5. Repeat with one new change at a time.
+
+What students should focus on learning:
+
+- How ML output can drive interaction in real time.
+- How to structure a project into clear modules.
+- How frame loops and state updates affect UX.
+- How to iterate safely with small testable changes.
+
+Good beginner modifications:
+
+1. Difficulty tuning: gravity, speed, lives.
+2. Gameplay variation: spawn timing, scoring rules.
+3. UX improvements: overlays, status text, restart flow.
+4. Debug views: draw landmark points for learning.
+5. Accessibility: clearer labels and larger controls.
+
+## 7) Small Practice Tasks
 
 Try these one at a time:
 
@@ -164,7 +245,7 @@ Try these one at a time:
 4. Add a pause button in the control panel.
 5. Show an in-game countdown before start.
 
-## 7) Troubleshooting
+## 8) Troubleshooting
 
 ### Camera blocked
 
@@ -185,7 +266,7 @@ Try these one at a time:
 - Hard refresh browser
 - Restart `npm run dev`
 
-## 8) Useful Commands
+## 9) Useful Commands
 
 ```bash
 npm run dev
@@ -194,12 +275,9 @@ npm run build
 npm run preview
 ```
 
-## 9) References
+## 10) References
 
 - Template repo:
   https://github.com/cederdorff/webcam-controlled-game
 - Original explanation guide:
   https://www.codedex.io/projects/make-a-webcam-controlled-game-with-tensorflowjs
-
-Denne guide er skrevet til elever, så den er nem at følge, men stadig grundig
-nok til at du forstår hvordan delene hænger sammen.
