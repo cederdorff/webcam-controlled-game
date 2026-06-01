@@ -1,18 +1,18 @@
-export function ControlPanel({ isLoading, isRunning, onStartCamera, onStopCamera, tracking }) {
+export function ControlPanel({ isGameOver, isLoading, isRunning, onRestartGame, onStartGame, onStopGame, tracking }) {
   return (
     <aside className="control-panel">
-      <Metric label="Hand" value={tracking.hand} />
-      <Metric label="Gesture" value={tracking.gesture} />
-      <Metric label="Confidence" value={formatPercent(tracking.confidence)} />
-      <Metric label="Pinch" value={tracking.pinching ? "Active" : "Idle"} />
+      <Metric label="Score" value={tracking.score} />
+      <Metric label="Best" value={tracking.best} />
+      <Metric label="Lives" value={tracking.lives} />
+      <Metric label="Hands" value={tracking.hands} />
 
       <button
         type="button"
         className="camera-button"
-        onClick={isRunning ? onStopCamera : onStartCamera}
+        onClick={getActionHandler({ isGameOver, isRunning, onRestartGame, onStartGame, onStopGame })}
         disabled={isLoading}
       >
-        {getCameraButtonLabel(isRunning, isLoading)}
+        {getCameraButtonLabel({ isGameOver, isLoading, isRunning })}
       </button>
     </aside>
   );
@@ -27,20 +27,30 @@ function Metric({ label, value }) {
   );
 }
 
-function getCameraButtonLabel(isRunning, isLoading) {
-  if (isRunning) {
-    return "Stop camera";
+function getActionHandler({ isGameOver, isRunning, onRestartGame, onStartGame, onStopGame }) {
+  if (isGameOver) {
+    return onRestartGame;
   }
 
+  if (isRunning) {
+    return onStopGame;
+  }
+
+  return onStartGame;
+}
+
+function getCameraButtonLabel({ isGameOver, isLoading, isRunning }) {
   if (isLoading) {
     return "Loading...";
   }
 
-  return "Start camera";
-}
+  if (isGameOver) {
+    return "Restart game";
+  }
 
-function formatPercent(value) {
-  const safeValue = Math.min(Math.max(value, 0), 1);
+  if (isRunning) {
+    return "Stop game";
+  }
 
-  return `${Math.round(safeValue * 100)}%`;
+  return "Start game";
 }

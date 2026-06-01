@@ -1,38 +1,34 @@
-import Webcam from "react-webcam";
-import { VIDEO_CONSTRAINTS } from "../handTracking";
-
 export function TrackingStage({
   canvasRef,
-  onCameraError,
-  onCameraReady,
+  isGameOver,
   isLoading,
   isRunning,
-  onStartCamera,
-  puckRef,
-  webcamRef
+  onRestartGame,
+  onStartGame,
+  tracking,
+  videoRef
 }) {
   return (
     <div className="stage" data-running={isRunning ? "true" : "false"}>
-      {isRunning && (
-        <Webcam
-          ref={webcamRef}
-          audio={false}
-          className="webcam-feed"
-          onUserMedia={onCameraReady}
-          onUserMediaError={onCameraError}
-          playsInline
-          videoConstraints={VIDEO_CONSTRAINTS}
-        />
-      )}
+      <video ref={videoRef} className="webcam-feed" playsInline muted />
       <canvas ref={canvasRef} className="landmark-layer" aria-hidden="true" />
-      <div ref={puckRef} className="control-object" role="img" aria-label="Puck">
-        <span></span>
-      </div>
+
+      {isGameOver && (
+        <div className="game-over-overlay" role="status" aria-live="polite">
+          <h2>Game over</h2>
+          <p>
+            Score {tracking.score} • Best {tracking.best}
+          </p>
+          <button type="button" onClick={onRestartGame}>
+            Restart game
+          </button>
+        </div>
+      )}
 
       {!isRunning && (
         <div className="start-overlay">
-          <button type="button" onClick={onStartCamera} disabled={isLoading}>
-            {isLoading ? "Loading..." : "Start camera"}
+          <button type="button" onClick={onStartGame} disabled={isLoading}>
+            {isLoading ? "Loading..." : "Start game"}
           </button>
         </div>
       )}
